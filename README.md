@@ -102,7 +102,7 @@ npm install
 Create a `.env.local` file in the project root.
 
 ```env
-MONGODB_URI=YOUR_MONGODB_CONNECTION_STRING
+MONGODB_URI=mongodb+srv://<username>:<password>@<cluster> mongodb.net/<database>
 ```
 
 ### 5. Run the development server
