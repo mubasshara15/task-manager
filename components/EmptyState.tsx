@@ -1,16 +1,14 @@
-import { Inbox } from "lucide-react";
+import { ClipboardList } from "lucide-react";
 
 export default function EmptyState() {
   return (
-    <div className="border border-dashed border-gray-700 rounded-2xl p-12 text-center mt-8">
-      <Inbox className="mx-auto h-16 w-16 text-gray-500 mb-4" />
-
-      <h2 className="text-2xl font-semibold text-white">
-        No Tasks Yet
-      </h2>
-
-      <p className="text-gray-400 mt-2">
-        Create your first task to get started.
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center">
+      <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10">
+        <ClipboardList className="h-7 w-7 text-primary" />
+      </div>
+      <h2 className="text-sm font-semibold text-foreground">No tasks yet</h2>
+      <p className="mt-1 max-w-xs text-xs text-muted">
+        Create your first task to start organizing your work.
       </p>
     </div>
   );
