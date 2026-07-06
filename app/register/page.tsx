@@ -2,16 +2,19 @@
 
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+
 import AuthCard from "@/components/auth/AuthCard";
 import FormInput from "@/components/auth/FormInput";
+import { authClient } from "@/auth-client";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function RegisterPage() {
   const router = useRouter();
+
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -44,24 +47,28 @@ export default function RegisterPage() {
     setSubmitting(true);
 
     try {
-      const res = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+      const { data, error } = await authClient.signUp.email({
+        name,
+        email,
+        password,
       });
 
-      const data = await res.json();
+      if (error) {
+        toast.error(error.message || "Registration failed.");
+        return;
+      }
 
-      if (!res.ok) {
-        toast.error(data.message || "Registration failed.");
+      if (!data?.user) {
+        toast.error("Registration failed.");
         return;
       }
 
       toast.success(`Welcome, ${data.user.name.split(" ")[0]}!`);
+
       router.push("/");
       router.refresh();
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      console.error(err);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
@@ -75,7 +82,10 @@ export default function RegisterPage() {
       footer={
         <>
           Already have an account?{" "}
-          <Link href="/login" className="font-medium text-primary hover:underline">
+          <Link
+            href="/login"
+            className="font-medium text-primary hover:underline"
+          >
             Login
           </Link>
         </>

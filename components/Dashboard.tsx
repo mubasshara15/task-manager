@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 import NewTaskModal from "@/components/NewTaskModal";
 import toast from "react-hot-toast";
 import type { AuthUser, NavSection, Task } from "@/types";
+import { authClient } from "@/auth-client";
 
 interface DashboardProps {
   user: AuthUser;
@@ -137,9 +138,17 @@ export default function Dashboard({ user }: DashboardProps) {
   };
 
   const handleLogout = async () => {
-    await fetch("/api/auth/logout", { method: "POST" });
-    toast.success("Logged out successfully.");
-    router.push("/login");
+    try {
+      await authClient.signOut();
+
+      toast.success("Logged out successfully.");
+
+      router.push("/login");
+      router.refresh();
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to log out.");
+    }
   };
 
   useEffect(() => {

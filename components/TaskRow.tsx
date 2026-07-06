@@ -23,7 +23,7 @@ export default function TaskRow({
   setEditingTitle,
   updateTask,
 }: TaskRowProps) {
-  const isEditing = editingId === task._id;
+  const isEditing = editingId === task.id;
 
   return (
     <motion.div
@@ -38,7 +38,7 @@ export default function TaskRow({
     >
       {/* Checkbox */}
       <button
-        onClick={() => toggleTask(task._id, task.completed)}
+        onClick={() => toggleTask(task.id, task.completed)}
         aria-label={task.completed ? "Mark as pending" : "Mark as completed"}
         className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-colors ${
           task.completed
@@ -128,7 +128,7 @@ export default function TaskRow({
           <>
             <button
               onClick={() => {
-                setEditingId(task._id);
+                setEditingId(task.id);
                 setEditingTitle(task.title);
               }}
               aria-label="Edit task"
@@ -138,7 +138,7 @@ export default function TaskRow({
             </button>
 
             <button
-              onClick={() => deleteTask(task._id)}
+              onClick={() => deleteTask(task.id)}
               aria-label="Delete task"
               className="flex h-7 w-7 items-center justify-center rounded-md text-muted opacity-0 transition-all hover:bg-danger/10 hover:text-danger group-hover:opacity-100 focus-visible:opacity-100"
             >

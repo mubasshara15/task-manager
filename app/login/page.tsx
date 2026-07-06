@@ -5,13 +5,16 @@ import type { FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+
 import AuthCard from "@/components/auth/AuthCard";
 import FormInput from "@/components/auth/FormInput";
+import { authClient } from "@/auth-client";
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export default function LoginPage() {
   const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
@@ -33,24 +36,28 @@ export default function LoginPage() {
     setSubmitting(true);
 
     try {
-      const res = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, rememberMe }),
+      const { data, error } = await authClient.signIn.email({
+        email,
+        password,
+        rememberMe,
       });
 
-      const data = await res.json();
+      if (error) {
+        toast.error(error.message || "Login failed.");
+        return;
+      }
 
-      if (!res.ok) {
-        toast.error(data.message || "Login failed.");
+      if (!data?.user) {
+        toast.error("Login failed.");
         return;
       }
 
       toast.success(`Welcome back, ${data.user.name.split(" ")[0]}!`);
-      router.push("/");
-      router.refresh();
-    } catch (error) {
-      console.error(error);
+
+      window.location.href = "/";
+
+    } catch (err) {
+      console.error(err);
       toast.error("Something went wrong. Please try again.");
     } finally {
       setSubmitting(false);
@@ -64,7 +71,10 @@ export default function LoginPage() {
       footer={
         <>
           Don&apos;t have an account?{" "}
-          <Link href="/register" className="font-medium text-primary hover:underline">
+          <Link
+            href="/register"
+            className="font-medium text-primary hover:underline"
+          >
             Register
           </Link>
         </>
@@ -102,7 +112,9 @@ export default function LoginPage() {
             Remember me
           </label>
 
-          <span className="cursor-not-allowed text-muted/60">Forgot password?</span>
+          <span className="cursor-not-allowed text-muted/60">
+            Forgot password?
+          </span>
         </div>
 
         <button

@@ -1,80 +1,134 @@
 import { NextResponse } from "next/server";
-import connectDB from "@/lib/mongodb";
-import Task from "@/models/Task";
-import { getCurrentUser } from "@/lib/auth";
+import { headers } from "next/headers";
+import { eq, desc, and } from "drizzle-orm";
+
+import { auth } from "@/lib/auth";
+import { db } from "@/db";
+import { task } from "@/db/schema";
+
+async function getSession() {
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
+
+  return session;
+}
 
 export async function GET() {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const session = await getSession();
+
+  if (!session) {
+    return NextResponse.json(
+      { message: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
-  await connectDB();
-  const tasks = await Task.find({ userId: user.id }).sort({ createdAt: -1 });
+  const tasks = await db
+    .select()
+    .from(task)
+    .where(eq(task.userId, session.user.id))
+    .orderBy(desc(task.createdAt));
+
   return NextResponse.json(tasks);
 }
 
 export async function POST(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getSession();
 
-  await connectDB();
+  if (!session) {
+    return NextResponse.json(
+      { message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
 
   const { title } = await request.json();
 
-  const task = await Task.create({
-    title,
-    completed: false,
-    userId: user.id,
-  });
+  if (!title?.trim()) {
+    return NextResponse.json(
+      { message: "Title is required" },
+      { status: 400 }
+    );
+  }
 
-  return NextResponse.json(task);
+  const [newTask] = await db
+    .insert(task)
+    .values({
+      title: title.trim(),
+      completed: false,
+      userId: session.user.id,
+    })
+    .returning();
+
+  return NextResponse.json(newTask);
 }
 
 export async function PATCH(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
+  const session = await getSession();
+
+  if (!session) {
+    return NextResponse.json(
+      { message: "Unauthorized" },
+      { status: 401 }
+    );
   }
 
-  await connectDB();
+  const { id, title, completed } = await request.json();
 
-  const body = await request.json();
+  console.log("PATCH BODY:", { id, title, completed });
 
-  const { id, completed, title } = body;
+  const updateData: Partial<{
+    title: string;
+    completed: boolean;
+  }> = {};
 
-  const updateData: Record<string, unknown> = {};
+  if (typeof title === "string") {
+    updateData.title = title.trim();
+  }
 
   if (typeof completed === "boolean") {
     updateData.completed = completed;
   }
 
-  if (title) {
-    updateData.title = title;
-  }
+  console.log("UPDATE DATA:", updateData);
 
-  const task = await Task.findOneAndUpdate(
-    { _id: id, userId: user.id },
-    updateData,
-    { new: true }
-  );
+  const [updatedTask] = await db
+    .update(task)
+    .set(updateData)
+    .where(
+      and(
+        eq(task.id, id),
+        eq(task.userId, session.user.id)
+      )
+    )
+    .returning();
 
-  return NextResponse.json(task);
+  console.log("UPDATED TASK:", updatedTask);
+
+  return NextResponse.json(updatedTask);
 }
 
 export async function DELETE(request: Request) {
-  const user = await getCurrentUser();
-  if (!user) {
-    return NextResponse.json({ message: "Unauthorized" }, { status: 401 });
-  }
+  const session = await getSession();
 
-  await connectDB();
+  if (!session) {
+    return NextResponse.json(
+      { message: "Unauthorized" },
+      { status: 401 }
+    );
+  }
 
   const { id } = await request.json();
 
-  await Task.findOneAndDelete({ _id: id, userId: user.id });
+  await db
+    .delete(task)
+    .where(
+      and(
+        eq(task.id, id),
+        eq(task.userId, session.user.id)
+      )
+    );
 
   return NextResponse.json({
     success: true,

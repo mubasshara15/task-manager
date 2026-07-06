@@ -1,13 +1,17 @@
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+
+import { auth } from "@/lib/auth";
 import Dashboard from "@/components/Dashboard";
 
 export default async function Page() {
-  const user = await getCurrentUser();
+  const session = await auth.api.getSession({
+    headers: await headers(),
+  });
 
-  if (!user) {
+  if (!session) {
     redirect("/login");
   }
 
-  return <Dashboard user={user} />;
+  return <Dashboard user={session.user} />;
 }

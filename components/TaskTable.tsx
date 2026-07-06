@@ -84,7 +84,7 @@ export default function TaskTable({
           <AnimatePresence initial={false}>
             {tasks.map((task) => (
               <TaskRow
-                key={task._id}
+                key={task.id}
                 task={task}
                 toggleTask={toggleTask}
                 deleteTask={deleteTask}
